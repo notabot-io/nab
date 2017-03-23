@@ -5,6 +5,14 @@ resources:
     repository: ${env.CONSOLE_SRC_GIT_URI}
     private_key: ${secrets.CONSOLE_SRC_PRIVATE_KEY}
 
+- name: console-ftp
+  image: dnab/ftp
+  options:
+    uri: ${secrets.FTP_URI}
+    username: ${secrets.FTP_USERNAME}
+    password: ${secrets.FTP_PASSWORD}
+    directory: ${secrets.FTP_DIRECTORY}
+
 - name: console-s3
   image: dnab/s3
   options:
@@ -30,10 +38,13 @@ jobs:
     input_mapping: { console: console-src }
   - push: console-s3
     params: { input: [ console-src ] }
+    recover:
+    - push: console-ftp
+      params: { input: [ console-src ] }
     when:
     - ${resources.console-src.branch} == 'master'
   defer:
-  - put: slack-notification
+  - push: slack-notification
     params: { status: "${job.status}" }
     when:
     - ${resources.console-src.branch} in ['master', 'feature/*']
