@@ -1,2 +1,3 @@
 # dnab
-DNAB is a pipeline-based, Docker-centric, lightweight task runner.
+
+DNAB is a pipeline-based, Container-centric, lightweight task runner.
