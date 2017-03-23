@@ -37,15 +37,15 @@ jobs:
     Run automated tests against the console codebase to ensure things are working as intended still
     after some changes have been made.
   tasks:
-  - get: console-src
+  - pull: console-src
     # Setting this to true will mean when a new version is found (either by the hook being called,
     # or the resource polling) it will trigger this task. There can be multiple triggers. A variable
     # will be added to the environment to say which resource triggered the job.
     trigger: true
-  - run: test
+  - exec: test
     file: console-src/ci/tasks/test.yml
     input_mapping: { console: console-src }
-  - put: console-s3
+  - push: console-s3
     # Would `when` have to use some kind of expression language?
     # Would resources have to expose some kind of metadata?
     # Resources would have to have fairly strict naming requirements.
@@ -56,7 +56,7 @@ jobs:
   # Deferred tasks run after all other tasks, and always run, regardless of the outcome, but can be
   # limited by using `when`.
   defer:
-  - put: slack-notification
+  - push: slack-notification
     params: { status: "${job.status}" }
     when:
     # ???
