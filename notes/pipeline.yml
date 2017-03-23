@@ -1,0 +1,63 @@
+resources:
+# Resources work very similarly to Concourse, aside from we just always assume they're images to be
+# run. This way we can avoid the additional step of adding a `resource_types` entry. Resources all
+# expose a hook that can be called to trigger a "check" for a new version. This would somehow need
+# to be customisable in a plugin - i.e. when a hook comes in.
+- name: console-src
+  image: dnab/git
+  # Some options will have defaults that seem sensible:
+  poll: true # Default
+  poll_interval: 1m # Default
+  # Options are string key to string value entries that configure a resource.
+  options:
+    # Whether or not options were required will have to be handled by the plugin, but there should
+    # be a standard way to fail, and inform the user about what has happened in a plugin.
+    repository: ${env.CONSOLE_SRC_GIT_URI}
+    # Variables like this won't be stored in the pipeline remotely, the pipeline will be stored as
+    # is, and resolved when it's running. This means all parameters could be treated as secrets.
+    # All values will be treated as strings, so if a plugin needs some non-string configuration it
+    # should handle the conversion itself.
+    private_key: ${secrets.CONSOLE_SRC_PRIVATE_KEY}
+
+- name: console-s3
+  image: dnab/s3
+  # ...
+
+- name: slack-notification
+  # Image is literally exactly the same as in Docker, if you want to specify a version then you can.
+  image: dnab/slack-alert
+  options:
+    # These names are quite specific, but you would also be able to re-use values across different
+    # resources, or in other places.
+    webhook: ${secrets.SLACK_ALERT_WEBHOOK}
+
+jobs:
+- name: test-console
+  description: |
+    Run automated tests against the console codebase to ensure things are working as intended still
+    after some changes have been made.
+  tasks:
+  - get: console-src
+    # Setting this to true will mean when a new version is found (either by the hook being called,
+    # or the resource polling) it will trigger this task. There can be multiple triggers. A variable
+    # will be added to the environment to say which resource triggered the job.
+    trigger: true
+  - run: test
+    file: console-src/ci/tasks/test.yml
+    input_mapping: { console: console-src }
+  - put: console-s3
+    # Would `when` have to use some kind of expression language?
+    # Would resources have to expose some kind of metadata?
+    # Resources would have to have fairly strict naming requirements.
+    # `when` would have to be able to be added to any task in a job.
+    # `when` items would have an "or" relationship.
+    when:
+    - ${resources.console-src.branch} == 'master'
+  # Deferred tasks run after all other tasks, and always run, regardless of the outcome, but can be
+  # limited by using `when`.
+  defer:
+  - put: slack-notification
+    params: { status: "${job.status}" }
+    when:
+    # ???
+    - ${resources.console-src.branch} in ['master', 'feature/*']
