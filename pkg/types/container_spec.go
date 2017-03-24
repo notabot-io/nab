@@ -1,5 +1,7 @@
 package types
 
+// @todo: Is ContainerSpec just going to be the same as Container in the end?
+
 // ContainerSpec defines the desired state of a container to be created.
 type ContainerSpec struct {
 	// Command provides the 'script' that will be run when starting the container.
