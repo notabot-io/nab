@@ -4,8 +4,10 @@ package types
 
 // ContainerSpec defines the desired state of a container to be created.
 type ContainerSpec struct {
+	// EntryPoint is the executable to run. The Command will be passed as an argument.
+	EntryPoint []string
 	// Command provides the 'script' that will be run when starting the container.
-	Command string
+	Command []string
 	// Dns is a list of DNS server addresses (<host>[:<port>]).
 	Dns []string
 	// Env is a list of environment variables to pass to the container.
