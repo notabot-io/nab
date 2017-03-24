@@ -1,6 +1,7 @@
 package types
 
-// @todo: Is ContainerSpec just going to be the same as Container in the end?
+// @todo: Is ContainerSpec just going to be the same as Container in the end? Perhaps not, Container
+// on it's own may have some information to identify a container, and have a spec attached?
 
 // ContainerSpec defines the desired state of a container to be created.
 type ContainerSpec struct {

@@ -59,9 +59,11 @@ func (e *dockerEngine) Create(spec *types.ContainerSpec) (*types.Container, erro
 		return nil, err
 	}
 
-	var _ = response
+	ctr := &types.Container{}
+	ctr.ID = response.ID
+	ctr.Spec = spec
 
-	return &types.Container{}, nil
+	return ctr, nil
 }
 
 func (e *dockerEngine) Run(*types.Container) error {

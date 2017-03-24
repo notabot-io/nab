@@ -31,5 +31,5 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	log.Println(container)
+	log.Println(container.ID)
 }
