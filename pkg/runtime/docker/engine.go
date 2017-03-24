@@ -1,14 +1,18 @@
 package docker
 
 import (
+	"bufio"
 	"context"
 	"io"
+	"log"
 
 	"github.com/dnab-io/dnab/pkg/runtime"
 	"github.com/dnab-io/dnab/pkg/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
+
+	dkrTypes "github.com/docker/docker/api/types"
 )
 
 // dockerEngine is runtime engine that uses Docker for container management.
@@ -30,6 +34,19 @@ func NewDockerEngine() runtime.Engine {
 }
 
 func (e *dockerEngine) Create(spec *types.ContainerSpec) (*types.Container, error) {
+	imgOut, err := e.client.ImagePull(context.Background(), spec.Image, dkrTypes.ImagePullOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	defer imgOut.Close()
+
+	imgScanner := bufio.NewScanner(imgOut)
+
+	for imgScanner.Scan() {
+		log.Println(imgScanner.Text())
+	}
+
 	ctrConfig := container.Config{}
 	ctrConfig.Image = spec.Image
 	ctrConfig.User = spec.User
