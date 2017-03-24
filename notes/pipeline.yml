@@ -1,3 +1,8 @@
+# Other important features not shown yet:
+# * including other files for resource configuration?
+# * including other files for `get` and `put`?
+# * including other files for jobs as a whole?
+
 resources:
 # Resources work very similarly to Concourse, aside from we just always assume they're images to be
 # run. This way we can avoid the additional step of adding a `resource_types` entry. Resources all
@@ -19,17 +24,26 @@ resources:
     # should handle the conversion itself.
     private_key: ${secrets.CONSOLE_SRC_PRIVATE_KEY}
 
+- name: console-version
+  image: dnab/semver
+  # ...
+
 - name: console-s3
   image: dnab/s3
   # ...
 
+- name: email-notification
+  image: dnab/sendgrid-notification
+  options:
+    apikey: ${secrets.SENDGRID_NOTIFICATION_APIKEY}
+
 - name: slack-notification
   # Image is literally exactly the same as in Docker, if you want to specify a version then you can.
-  image: dnab/slack-alert
+  image: dnab/slack-notification
   options:
     # These names are quite specific, but you would also be able to re-use values across different
     # resources, or in other places.
-    webhook: ${secrets.SLACK_ALERT_WEBHOOK}
+    webhook: ${secrets.SLACK_NOTIFICATION_WEBHOOK}
 
 jobs:
 - name: test-console
@@ -42,6 +56,7 @@ jobs:
     # or the resource polling) it will trigger this task. There can be multiple triggers. A variable
     # will be added to the environment to say which resource triggered the job.
     trigger: true
+  - pull: console-version
   - exec: test
     file: console-src/ci/tasks/test.yml
     input_mapping: { console: console-src }
@@ -58,12 +73,17 @@ jobs:
     # `when` would have to be able to be added to any task in a job.
     # `when` items would have an "or" relationship.
     when:
-    - ${resources.console-src.branch} == 'master'
+    - ${resources.console-src.branch} == 'master' # How do we express and/or relationships?
   # Deferred tasks run after all other tasks, and always run, regardless of the outcome, but can be
-  # limited by using `when`.
+  # limited by using `when`. `on_success` and co don't make as much sense in this case, because you
+  # have the status as a variable from the job. You can use that value and pass it into resources to
+  # affect behaviour. This helps avoid duplication. You can also decide which tasks in `defer` run
+  # with when still:
   defer:
-  - push: slack-notification
-    params: { status: "${job.status}" }
-    when:
-    # Syntax to be worker out for expressions...
-    - ${resources.console-src.branch} in ['master', 'feature/*']
+  - parallel:
+    - put: email-notification
+      params: { status: "${job.status}" }
+      when:
+      - ${resources.console-src.branch} in ['master', 'feature/*'] && ${job.status} != 'success'
+    - put: slack-notification
+      params: { status: "${job.status}" }
