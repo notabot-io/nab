@@ -25,6 +25,7 @@ services:
   # ...
   dnab-worker:
     image: dnab/dnab
+    command: worker
     environment:
       DNAB_WORKSPACE: /home/dnab
     volumes:
