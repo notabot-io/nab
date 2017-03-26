@@ -21,6 +21,7 @@ type: resource
 name: console-s3
 image: dnab/s3
 options:
+  uri: ${secrets.S3_URI}
   username: ${secrets.S3_USERNAME}
   password: ${secrets.S3_PASSWORD}
   bucket: ${secrets.S3_BUCKET}
