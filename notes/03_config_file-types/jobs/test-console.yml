@@ -10,26 +10,28 @@ tasks:
 - exec: test
   file: console-src/ci/tasks/test.yml
   params:
-    console-volume: console-src
+    golang-src: console-src
+    golang-dest: github.com/eidolon/console
 - push: console-s3
   params: { input: [ console-src ] }
   recover:
   - push: console-ftp
     params: { input: [ console-src ] }
   when:
-  - ${resources.console-src.branch} == 'master'
+  - {{.resources.console-src.branch}} == 'master'
 defer:
 - push: slack-notification
-  params: { status: "${job.status}" }
+  params: { status: "{{.job.status}}" }
   when:
-  - ${resources.console-src.branch} in ['master', 'feature/*']
+  - {{.resources.console-src.branch}} in ['master', 'feature/*']
 
 
-# console-src/ci/tasks/test.yml (TBC)
+# console-src/ci/tasks/test.yml
 ---
 image: golang:1.8
 volumes:
-- ${params.golang-src}:/go/src/${params.golang-dest}
+- {{.params.golang-src}}:/go/src/{{.params.golang-dest}}
+workdir: /go/src/{{.params.golang-dest}}
 commands:
 - go get github.com/golang/lint/golint
 - go get ./...
