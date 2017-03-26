@@ -1,0 +1,38 @@
+---
+type: job
+name: test-console
+description: |
+  Run automated tests against the console codebase to ensure things are working as intended still
+  after some changes have been made.
+tasks:
+- pull: console-src
+  trigger: true
+- exec: test
+  file: console-src/ci/tasks/test.yml
+  params:
+    console-volume: console-src
+- push: console-s3
+  params: { input: [ console-src ] }
+  recover:
+  - push: console-ftp
+    params: { input: [ console-src ] }
+  when:
+  - ${resources.console-src.branch} == 'master'
+defer:
+- push: slack-notification
+  params: { status: "${job.status}" }
+  when:
+  - ${resources.console-src.branch} in ['master', 'feature/*']
+
+
+# console-src/ci/tasks/test.yml (TBC)
+---
+image: golang:1.8
+volumes:
+- ${params.golang-src}:/go/src/${params.golang-dest}
+commands:
+- go get github.com/golang/lint/golint
+- go get ./...
+- golint -set_exit_status ./...
+- go vet ./...
+- go test -cover -race -coverprofile cover.out ./...

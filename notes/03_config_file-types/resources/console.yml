@@ -1,0 +1,33 @@
+---
+type: resource
+name: console-src
+image: dnab/git
+options:
+  repository: ${env.CONSOLE_SRC_GIT_URI}
+  private_key: ${secrets.CONSOLE_SRC_PRIVATE_KEY}
+
+---
+type: resource
+name: console-ftp
+image: dnab/ftp
+options:
+  uri: ${secrets.FTP_URI}
+  username: ${secrets.FTP_USERNAME}
+  password: ${secrets.FTP_PASSWORD}
+  directory: ${secrets.FTP_DIRECTORY}
+
+---
+type: resource
+name: console-s3
+image: dnab/s3
+options:
+  username: ${secrets.S3_USERNAME}
+  password: ${secrets.S3_PASSWORD}
+  bucket: ${secrets.S3_BUCKET}
+
+---
+type: resource
+name: slack-notification
+image: dnab/slack-alert
+options:
+  webhook: ${secrets.SLACK_ALERT_WEBHOOK}
